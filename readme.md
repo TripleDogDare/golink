@@ -25,9 +25,12 @@ Adding polydawn.net/pogo from https://github.com/polydawn/pogo
 Cloning into '.gopath/src/polydawn.net/pogo'...
 ```
 
-Anyone who has golang installed can build your project!
+## Does it build?
+
+Building golink is just like building your project using golink.
+Anyone who has golang installed can do it!
 ```text
-$ git clone https://github.com/kofalt/golink && cd golink
+$ git clone https://github.com/polydawn/golink && cd golink
 $ ./goad
 ```
 
@@ -58,7 +61,7 @@ This is not an exhaustive comparison - just explaining the motivations behind Go
 
 Name                                                       | Config | Isolated | Vendors | Repeatable | Required to Build
 ---------------------------------------------------------- | ------ | -------- | ------- | ---------- | -----------------
-[GoLink](https://github.com/kofalt/golink)                 | None   | Yes      | No      | Yes        | No
+[GoLink](https://github.com/polydawn/golink)                 | None   | Yes      | No      | Yes        | No
 [Godep](https://github.com/tools/godep)                    | JSON   | No       | Yes     | Optionally | Optionally
 [Goop](https://github.com/nitrous-io/goop)                 | Custom | Yes      | No      | Optionally | Yes
 [Johnny Deps](https://github.com/VividCortex/johnny-deps)  | Custom | No       | No      | Optionally | Yes
