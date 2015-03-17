@@ -46,10 +46,10 @@ function run_build () {
 
     $bin_exists = Test-Path $GOPATH\bin
     if ( -not $bin_exists ) {
-        Write-host "$GOPATH\bin does not exist"
+        Write-host "$(Join-Path $GOPATH bin) does not exist"
         run_init
     } else {
-        Write-host "$GOPATH\bin exists"
+        Write-host "$(Join-Path $GOPATH bin) exists, skipping init"
     }
 
     # The `go install` command does not allow you to name the executable, but caches intermediate `.a` files in `.gopath/pkg`, making incremental builds instant. The `go build` command does not support this feature.
@@ -65,6 +65,7 @@ function run_build () {
         $name_path =  $name_path + ".exe"
         Copy-Item $exe_path $name_path
     }
+    Write-host "Copy $exe_path to $name_path"
 }
 
 function run_doc () {
@@ -82,51 +83,6 @@ function run_doc () {
         & godoc $pkg\$package
         Write-host "\n\n\n"
     }
-}
-
-function elevate() {
-    # Get the ID and security principal of the current user account
-    $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
-    $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
-
-    # Get the security principal for the Administrator role
-    $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-
-    # Check to see if we are currently running "as Administrator"
-    if ($myWindowsPrincipal.IsInRole($adminRole)) {
-
-        # We are running "as Administrator" - so change the title and background color to indicate this
-        $Host.UI.RawUI.WindowTitle = "$name goad.ps1 (Elevated)"
-        $Host.UI.RawUI.BackgroundColor = "DarkBlue"
-        clear-host
-
-        return $FALSE
-    } else {
-
-        # We are not running "as Administrator" - so relaunch as administrator
-        # Create a new process object that starts PowerShell
-        $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-
-        # Specify the current script path and name as a parameter
-        # $newProcess.Arguments = "-NoExit $scriptpath";
-        $newProcess.Arguments = "$name goad.ps1";
-
-        # Indicate that the process should be elevated
-        $newProcess.Verb = "runas";
-
-        # Start the new process
-        [System.Diagnostics.Process]::Start($newProcess);
-
-        # Exit from the current, unelevated, process
-        return $TRUE
-    }
-}
-
-# Request admin privileges if needed
-if ( elevate ) {
-    Write-Host -NoNewLine "Press any key to continue..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    return
 }
 
 $do_init  = $FALSE
@@ -167,19 +123,21 @@ Set-Item Env:GOPATH $GOPATH
 
 $link_path = $(Join-Path $GOPATH "src")
 $link_path = $(Join-Path $link_path $pkg)
-if ($(Test-Path $link_path)) {
+#Replace unix symlink with ntfs junction
+if ($(Test-Path $link_path -PathType leaf)) {
     Write-host "Removing file $link_path"
     Remove-Item $link_path
-}
-Write-host "Make symlink $link_path -> $BASEDIR"
-
-cmd /c mklink /D "$link_path" "$BASEDIR"
-$link=Test-Path "$link_path"
-if ( -not $link ) {
-    Write-host "Failed to create symlink"
-    Write-Host -NoNewLine "Press any key to continue..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    return
+    # cmd /c rmdir $link_path
+    # [System.IO.Directory]::Delete($link_path,$true)
+    Write-host "Make symlink $link_path -> $BASEDIR"
+    cmd /c mklink /j "$link_path" "$BASEDIR"
+    $link=Test-Path "$link_path"
+    if ( -not $link ) {
+        Write-host "Failed to create symlink"
+        Write-Host -NoNewLine "Press any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        return
+    }
 }
 
 if ( $do_init ) {
